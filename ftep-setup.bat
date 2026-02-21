@@ -1,5 +1,5 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 > nul 2>&1
 
 REM ftep-setup.bat — Lanceur Windows pour le provisioning Firebase
 REM FT Events Pro
