@@ -79,23 +79,39 @@ function checkPrerequisites() {
 async function askUserConfig() {
   printStep(2, 'Configuration du projet...');
 
-  const orgName = await askQuestion('Nom de votre organisation');
-  if (!orgName) {
-    printError('Le nom de l\'organisation est obligatoire.');
-    process.exit(1);
+  // Proposer de reutiliser un projet existant
+  const existingId = await askQuestion(
+    'ID d\'un projet Firebase existant (laissez vide pour en creer un nouveau)'
+  );
+
+  let orgName, projectId;
+
+  if (existingId) {
+    projectId = existingId.trim();
+    orgName = await askQuestion('Nom de votre organisation');
+    if (!orgName) {
+      printError('Le nom de l\'organisation est obligatoire.');
+      process.exit(1);
+    }
+    console.log(`  Projet existant : ${projectId}`);
+  } else {
+    orgName = await askQuestion('Nom de votre organisation');
+    if (!orgName) {
+      printError('Le nom de l\'organisation est obligatoire.');
+      process.exit(1);
+    }
+
+    const slug = slugify(orgName);
+    projectId = `${slug}-${randomSuffix()}`;
+    console.log(`  Identifiant du projet : ${projectId}`);
   }
-
-  const slug = slugify(orgName);
-  const projectId = `${slug}-${randomSuffix()}`;
-
-  console.log(`  Identifiant du projet : ${projectId}`);
 
   const bundleId = await askQuestion(
     'Bundle ID de l\'application iOS',
     BUNDLE_ID_DEFAULT
   );
 
-  return { orgName, projectId, bundleId };
+  return { orgName, projectId, bundleId, useExisting: !!existingId };
 }
 
 // MARK: - Authentification Firebase + gcloud
@@ -161,6 +177,11 @@ async function ensureFirebaseLogin() {
 
 async function createProject(config) {
   printStep(4, 'Creation du projet Firebase...');
+
+  if (config.useExisting) {
+    printSuccess(`Projet existant utilise : ${config.projectId}`);
+    return;
+  }
 
   try {
     execLive(
