@@ -36,7 +36,8 @@ export function execLive(cmd) {
  */
 export function checkCommand(cmd) {
   try {
-    execSync(`which ${cmd}`, { stdio: 'pipe' });
+    const check = process.platform === 'win32' ? 'where' : 'which';
+    execSync(`${check} ${cmd}`, { stdio: 'pipe' });
     return true;
   } catch {
     return false;
