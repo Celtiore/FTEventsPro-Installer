@@ -389,26 +389,37 @@ async function createAppAndExtractCredentials(config) {
 async function deployRules(config) {
   printStep(8, 'Deploiement des regles de securite...');
 
-  // Firestore et Storage doivent etre initialises manuellement dans la console
-  // avant de pouvoir deployer des rules. On tente le deploy, mais on guide
-  // l'utilisateur si ca echoue.
+  const configPath = `"${path.join(ROOT_DIR, 'firebase.json')}"`;
+
+  // Deployer Firestore rules (fonctionne sur plan Spark gratuit)
   try {
     execLive(
-      `firebase deploy --only firestore:rules,storage ` +
+      `firebase deploy --only firestore:rules ` +
       `--project ${config.projectId} ` +
-      `--config "${path.join(ROOT_DIR, 'firebase.json')}"`
+      `--config ${configPath}`
     );
-    printSuccess('Regles de securite deployees (Firestore + Storage)');
+    printSuccess('Regles Firestore deployees');
   } catch {
-    printWarning('Les regles de securite n\'ont pas pu etre deployees automatiquement.');
-    console.log('');
-    console.log('  Cela arrive quand Firestore ou Storage n\'ont pas encore ete');
-    console.log('  initialises dans la console Firebase.');
-    console.log('');
-    console.log('  Pas d\'inquietude : votre administrateur s\'en chargera.');
-    console.log('  Les credentials ont bien ete exportees.');
-    // Non bloquant — les credentials sont deja exportees
+    printWarning('Regles Firestore non deployees (Firestore pas encore initialise).');
+    console.log('  Votre administrateur s\'en chargera.');
   }
+
+  // Deployer Storage rules (necessite plan Blaze pay-as-you-go)
+  try {
+    execLive(
+      `firebase deploy --only storage ` +
+      `--project ${config.projectId} ` +
+      `--config ${configPath}`
+    );
+    printSuccess('Regles Storage deployees');
+  } catch {
+    printWarning('Regles Storage non deployees.');
+    console.log('  Firebase Storage necessite le plan Blaze (pay-as-you-go).');
+    console.log('  Votre administrateur configurera Storage et les regles plus tard.');
+  }
+
+  console.log('');
+  console.log('  Les credentials ont bien ete exportees, independamment des regles.');
 }
 
 // MARK: - Resume final
