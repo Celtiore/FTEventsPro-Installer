@@ -12,11 +12,41 @@ et genere un fichier de configuration a transmettre a votre administrateur.
 
 ### Installer Google Cloud CLI
 
-| Systeme | Lien |
-|---------|------|
-| Mac | https://cloud.google.com/sdk/docs/install#mac |
-| Windows | https://cloud.google.com/sdk/docs/install#windows |
-| Linux | https://cloud.google.com/sdk/docs/install#linux |
+Ouvrez votre terminal et copiez-collez la commande correspondant a votre systeme :
+
+**Mac :**
+
+```bash
+curl https://sdk.cloud.google.com | bash
+```
+
+Fermez puis rouvrez le Terminal. Tapez ensuite :
+
+```bash
+gcloud init
+```
+
+Suivez les instructions : connectez-vous avec votre compte Google quand le navigateur s'ouvre.
+
+**Windows :**
+
+Telechargez et lancez l'installateur : https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe
+
+L'installateur fait tout automatiquement. A la fin, cochez **Run gcloud init** et connectez-vous avec votre compte Google.
+
+**Linux (Debian/Ubuntu) :**
+
+```bash
+curl https://sdk.cloud.google.com | bash
+```
+
+Fermez puis rouvrez le terminal. Tapez ensuite :
+
+```bash
+gcloud init
+```
+
+Suivez les instructions : connectez-vous avec votre compte Google quand le navigateur s'ouvre.
 
 ## Installation rapide
 
@@ -76,7 +106,8 @@ Il l'importera dans l'application pour finaliser la configuration de votre espac
 
 ### "Google Cloud CLI non detecte"
 
-Installez Google Cloud CLI depuis les liens dans la section Prerequis, puis relancez le script.
+Suivez les instructions de la section **Installer Google Cloud CLI** ci-dessus, puis relancez le script.
+Apres l'installation, n'oubliez pas de fermer et rouvrir votre terminal avant de relancer.
 
 ### "Echec de la connexion Firebase"
 
