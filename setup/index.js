@@ -314,9 +314,10 @@ async function createAppAndExtractCredentials(config) {
     const token = exec('gcloud auth print-access-token');
 
     // Appeler l'API REST pour obtenir la config de l'app iOS
-    const curlCmd = process.platform === 'win32'
-      ? `curl -s -H "Authorization: Bearer ${token}" "https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config"`
-      : `curl -s -H "Authorization: Bearer ${token}" "https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config"`;
+    const curlCmd =
+      `curl -s -H "Authorization: Bearer ${token}" ` +
+      `-H "x-goog-user-project: ${config.projectId}" ` +
+      `"https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config"`;
 
     const configRaw = exec(curlCmd);
     const iosConfig = JSON.parse(configRaw);
