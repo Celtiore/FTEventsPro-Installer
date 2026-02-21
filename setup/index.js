@@ -248,9 +248,8 @@ async function createAppAndExtractCredentials(config) {
   // Creer l'app iOS dans le projet Firebase
   try {
     const result = exec(
-      `firebase apps:create IOS ` +
+      `firebase apps:create IOS "${config.orgName}" ` +
       `--bundle-id ${config.bundleId} ` +
-      `--display-name "${config.orgName}" ` +
       `-P ${config.projectId} --json`
     );
     const parsed = JSON.parse(result);
