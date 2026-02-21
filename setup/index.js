@@ -308,28 +308,52 @@ async function createAppAndExtractCredentials(config) {
     }
   }
 
-  // Extraire les credentials directement depuis l'app iOS
+  // Extraire les credentials via l'API REST Firebase Management
   try {
-    // Recuperer la config SDK de l'app iOS
-    const sdkConfigRaw = exec(
-      `firebase apps:sdkconfig IOS ${appId} -P ${config.projectId} --json`
-    );
-    const sdkConfig = JSON.parse(sdkConfigRaw);
-    const iosConfig = sdkConfig.result?.sdkConfig;
+    // Obtenir un token d'acces via gcloud
+    const token = exec('gcloud auth print-access-token');
 
-    if (!iosConfig) {
-      throw new Error('sdkConfig vide');
+    // Appeler l'API REST pour obtenir la config de l'app iOS
+    const curlCmd = process.platform === 'win32'
+      ? `curl -s -H "Authorization: Bearer ${token}" "https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config"`
+      : `curl -s -H "Authorization: Bearer ${token}" "https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config"`;
+
+    const configRaw = exec(curlCmd);
+    const iosConfig = JSON.parse(configRaw);
+
+    if (iosConfig.error) {
+      throw new Error(iosConfig.error.message || 'Erreur API Firebase');
     }
 
-    // Mapper vers le format attendu par FTEPAdmin (FirebaseCredentials)
+    // La reponse contient configFileContents en base64 (GoogleService-Info.plist)
+    // et aussi les champs directement accessibles
     const credentials = {
       apiKey: iosConfig.apiKey || '',
       projectID: iosConfig.projectId || config.projectId,
-      googleAppID: appId,
+      googleAppID: iosConfig.googleAppId || appId,
       gcmSenderID: iosConfig.gcmSenderId || '',
-      storageBucket: iosConfig.storageBucket || '',
+      storageBucket: iosConfig.storageBucket || `${config.projectId}.firebasestorage.app`,
       databaseURL: iosConfig.databaseURL || null
     };
+
+    // Si les champs sont vides, parser le plist base64
+    if (!credentials.apiKey && iosConfig.configFileContents) {
+      const plist = Buffer.from(iosConfig.configFileContents, 'base64').toString('utf-8');
+      const extract = (key) => {
+        const match = plist.match(new RegExp(`<key>${key}</key>\\s*<string>([^<]+)</string>`));
+        return match ? match[1] : '';
+      };
+      credentials.apiKey = extract('API_KEY');
+      credentials.projectID = extract('PROJECT_ID') || config.projectId;
+      credentials.googleAppID = extract('GOOGLE_APP_ID') || appId;
+      credentials.gcmSenderID = extract('GCM_SENDER_ID');
+      credentials.storageBucket = extract('STORAGE_BUCKET') || `${config.projectId}.firebasestorage.app`;
+      credentials.databaseURL = extract('DATABASE_URL') || null;
+    }
+
+    if (!credentials.apiKey) {
+      throw new Error('Impossible d\'extraire l\'API Key');
+    }
 
     // Ecrire le fichier credentials
     const outputPath = path.join(ROOT_DIR, 'ftep-credentials.json');
