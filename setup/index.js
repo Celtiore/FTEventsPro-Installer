@@ -142,9 +142,21 @@ async function createProject(config) {
   } catch (err) {
     if (err.message?.includes('already exists')) {
       printWarning('Ce projet existe deja. Utilisation du projet existant.');
+    } else if (err.message?.includes('Terms of Service')) {
+      printError('Vous devez accepter les conditions d\'utilisation de Google Cloud.');
+      console.log('');
+      console.log('  Ouvrez ce lien dans votre navigateur :');
+      console.log('  https://console.cloud.google.com/terms');
+      console.log('');
+      console.log('  Acceptez les conditions, puis relancez ce script.');
+      process.exit(1);
     } else if (err.message?.includes('quota')) {
       printError('Vous avez atteint le nombre maximum de projets Firebase.');
-      printError('Supprimez un ancien projet ou contactez l\'administrateur.');
+      console.log('');
+      console.log('  Supprimez un ancien projet dans la console Firebase :');
+      console.log('  https://console.firebase.google.com');
+      console.log('');
+      console.log('  Puis relancez ce script.');
       process.exit(1);
     } else {
       printError(`Echec de la creation du projet : ${err.message}`);

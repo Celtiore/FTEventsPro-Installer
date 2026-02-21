@@ -7,6 +7,7 @@ et genere un fichier de configuration a transmettre a votre administrateur.
 ## Prerequis
 
 - **Un compte Google** (adresse Gmail ou Google Workspace)
+- **Accepter les conditions Google Cloud** : ouvrez [console.cloud.google.com/terms](https://console.cloud.google.com/terms) et acceptez les conditions d'utilisation (une seule fois)
 - **Une connexion internet**
 - **Google Cloud CLI** (le script installe automatiquement les autres outils)
 
