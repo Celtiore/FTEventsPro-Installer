@@ -393,7 +393,7 @@ async function deployRules(config) {
     execLive(
       `firebase deploy --only firestore:rules,storage ` +
       `--project ${config.projectId} ` +
-      `--config ${path.join(ROOT_DIR, 'firebase.json')}`
+      `--config "${path.join(ROOT_DIR, 'firebase.json')}"`
     );
     printSuccess('Regles de securite deployees (Firestore + Storage)');
   } catch (err) {
