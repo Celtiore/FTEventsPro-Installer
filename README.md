@@ -30,7 +30,7 @@ Suivez les instructions : connectez-vous avec votre compte Google quand le navig
 
 **Windows :**
 
-Telechargez et lancez l'installateur : https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe
+Telechargez et lancez l'installateur : [Google Cloud SDK Installer](https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe)
 
 L'installateur fait tout automatiquement. A la fin, cochez **Run gcloud init** et connectez-vous avec votre compte Google.
 
