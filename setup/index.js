@@ -98,32 +98,61 @@ async function askUserConfig() {
   return { orgName, projectId, bundleId };
 }
 
-// MARK: - Authentification Firebase
+// MARK: - Authentification Firebase + gcloud
 
 async function ensureFirebaseLogin() {
-  printStep(3, 'Connexion a Firebase...');
+  printStep(3, 'Connexion a Firebase et Google Cloud...');
 
+  // 3a. Verifier/lancer Firebase login
+  let firebaseEmail = null;
   try {
     const account = exec('firebase login:list --json 2>/dev/null');
     const parsed = JSON.parse(account);
     if (parsed.result && parsed.result.length > 0) {
-      printSuccess(`Connecte en tant que ${parsed.result[0].user.email}`);
+      firebaseEmail = parsed.result[0].user.email;
+      printSuccess(`Firebase : connecte en tant que ${firebaseEmail}`);
+    }
+  } catch {
+    // Pas connecte
+  }
+
+  if (!firebaseEmail) {
+    console.log('  Ouverture du navigateur pour la connexion Google...');
+    console.log('  Connectez-vous avec votre compte Google puis revenez ici.');
+    console.log('');
+
+    try {
+      execLive('firebase login');
+      printSuccess('Firebase : connexion reussie');
+    } catch {
+      printError('Echec de la connexion Firebase.');
+      printError('Verifiez votre connexion internet et reessayez.');
+      process.exit(1);
+    }
+  }
+
+  // 3b. Verifier/lancer gcloud login
+  try {
+    const gcloudAccount = exec('gcloud auth list --filter=status:ACTIVE --format=value(account)');
+    if (gcloudAccount) {
+      printSuccess(`Google Cloud : connecte en tant que ${gcloudAccount}`);
       return;
     }
   } catch {
-    // Pas connecte — lancer le login
+    // Pas connecte
   }
 
-  console.log('  Ouverture du navigateur pour la connexion Google...');
-  console.log('  Connectez-vous avec votre compte Google puis revenez ici.');
+  console.log('');
+  console.log('  Google Cloud necessite aussi une connexion.');
+  console.log('  Le navigateur va s\'ouvrir a nouveau...');
   console.log('');
 
   try {
-    execLive('firebase login');
-    printSuccess('Connexion reussie');
+    execLive('gcloud auth login');
+    printSuccess('Google Cloud : connexion reussie');
   } catch {
-    printError('Echec de la connexion Firebase.');
-    printError('Verifiez votre connexion internet et reessayez.');
+    printError('Echec de la connexion Google Cloud.');
+    printError('Executez manuellement : gcloud auth login');
     process.exit(1);
   }
 }
