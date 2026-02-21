@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Document utilisateur — lecture par le proprietaire uniquement
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false; // Ecrit uniquement par Cloud Functions
+    }
+
+    // Collections metier — isolation par orgId (custom claim)
+    // Architecture plate : organizations/{orgId}/{collection}/{docId}
+    match /organizations/{orgId}/{collection}/{docId} {
+      allow read, write: if request.auth != null
+        && request.auth.token.orgId == orgId;
+    }
+  }
+}

@@ -1,0 +1,4 @@
+node_modules/
+ftep-credentials.json
+.DS_Store
+*.log

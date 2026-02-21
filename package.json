@@ -1,0 +1,14 @@
+{
+  "name": "ftep-setup",
+  "version": "1.0.0",
+  "description": "Script de provisioning Firebase pour FT Events Pro",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "setup": "node setup/index.js"
+  },
+  "dependencies": {
+    "inquirer": "^9.2.0",
+    "chalk": "^5.3.0"
+  }
+}
