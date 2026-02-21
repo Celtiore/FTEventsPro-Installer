@@ -230,33 +230,32 @@ async function enableEmailAuth(config) {
   printStep(6, 'Configuration de l\'authentification...');
 
   try {
-    // Obtenir un token d'acces via gcloud
     const token = exec('gcloud auth print-access-token');
 
-    // Activer le provider Email/Password via REST API Identity Platform v2
-    const url = `https://identitytoolkit.googleapis.com/admin/v2/projects/${config.projectId}/defaultSupportedIdpConfigs/password`;
-
+    const baseUrl = `https://identitytoolkit.googleapis.com/admin/v2/projects/${config.projectId}/defaultSupportedIdpConfigs`;
     const body = JSON.stringify({
       name: `projects/${config.projectId}/defaultSupportedIdpConfigs/password`,
       enabled: true
     });
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'x-goog-user-project': config.projectId
+    };
 
     // Tenter PATCH d'abord (si deja configure), sinon POST
-    try {
-      exec(
-        `curl -s -X PATCH "${url}" ` +
-        `-H "Authorization: Bearer ${token}" ` +
-        `-H "Content-Type: application/json" ` +
-        `-d '${body}'`
-      );
-    } catch {
-      exec(
-        `curl -s -X POST ` +
-        `"https://identitytoolkit.googleapis.com/admin/v2/projects/${config.projectId}/defaultSupportedIdpConfigs?idpId=password" ` +
-        `-H "Authorization: Bearer ${token}" ` +
-        `-H "Content-Type: application/json" ` +
-        `-d '${body}'`
-      );
+    let response = await fetch(`${baseUrl}/password`, {
+      method: 'PATCH',
+      headers,
+      body
+    });
+
+    if (!response.ok) {
+      response = await fetch(`${baseUrl}?idpId=password`, {
+        method: 'POST',
+        headers,
+        body
+      });
     }
 
     printSuccess('Authentification Email/Mot de passe activee');
@@ -308,52 +307,46 @@ async function createAppAndExtractCredentials(config) {
     }
   }
 
-  // Extraire les credentials via l'API REST Firebase Management
+  // Extraire les credentials via l'API REST Firebase Management (requete Node.js native)
   try {
-    // Obtenir un token d'acces via gcloud
     const token = exec('gcloud auth print-access-token');
 
-    // Appeler l'API REST pour obtenir la config de l'app iOS
-    const curlCmd =
-      `curl -s -H "Authorization: Bearer ${token}" ` +
-      `-H "x-goog-user-project: ${config.projectId}" ` +
-      `"https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config"`;
+    const url = `https://firebase.googleapis.com/v1beta1/projects/${config.projectId}/iosApps/${appId}/config`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'x-goog-user-project': config.projectId
+      }
+    });
 
-    const configRaw = exec(curlCmd);
-    const iosConfig = JSON.parse(configRaw);
+    const iosConfig = await response.json();
 
     if (iosConfig.error) {
       throw new Error(iosConfig.error.message || 'Erreur API Firebase');
     }
 
-    // La reponse contient configFileContents en base64 (GoogleService-Info.plist)
-    // et aussi les champs directement accessibles
-    const credentials = {
-      apiKey: iosConfig.apiKey || '',
-      projectID: iosConfig.projectId || config.projectId,
-      googleAppID: iosConfig.googleAppId || appId,
-      gcmSenderID: iosConfig.gcmSenderId || '',
-      storageBucket: iosConfig.storageBucket || `${config.projectId}.firebasestorage.app`,
-      databaseURL: iosConfig.databaseURL || null
-    };
-
-    // Si les champs sont vides, parser le plist base64
-    if (!credentials.apiKey && iosConfig.configFileContents) {
-      const plist = Buffer.from(iosConfig.configFileContents, 'base64').toString('utf-8');
-      const extract = (key) => {
-        const match = plist.match(new RegExp(`<key>${key}</key>\\s*<string>([^<]+)</string>`));
-        return match ? match[1] : '';
-      };
-      credentials.apiKey = extract('API_KEY');
-      credentials.projectID = extract('PROJECT_ID') || config.projectId;
-      credentials.googleAppID = extract('GOOGLE_APP_ID') || appId;
-      credentials.gcmSenderID = extract('GCM_SENDER_ID');
-      credentials.storageBucket = extract('STORAGE_BUCKET') || `${config.projectId}.firebasestorage.app`;
-      credentials.databaseURL = extract('DATABASE_URL') || null;
+    if (!iosConfig.configFileContents) {
+      throw new Error('configFileContents absent de la reponse');
     }
 
+    // Decoder le GoogleService-Info.plist (base64) et extraire les champs
+    const plist = Buffer.from(iosConfig.configFileContents, 'base64').toString('utf-8');
+    const extract = (key) => {
+      const match = plist.match(new RegExp(`<key>${key}</key>\\s*<string>([^<]+)</string>`));
+      return match ? match[1] : '';
+    };
+
+    const credentials = {
+      apiKey: extract('API_KEY'),
+      projectID: extract('PROJECT_ID') || config.projectId,
+      googleAppID: extract('GOOGLE_APP_ID') || appId,
+      gcmSenderID: extract('GCM_SENDER_ID'),
+      storageBucket: extract('STORAGE_BUCKET') || `${config.projectId}.firebasestorage.app`,
+      databaseURL: extract('DATABASE_URL') || null
+    };
+
     if (!credentials.apiKey) {
-      throw new Error('Impossible d\'extraire l\'API Key');
+      throw new Error('Impossible d\'extraire l\'API Key du plist');
     }
 
     // Ecrire le fichier credentials
