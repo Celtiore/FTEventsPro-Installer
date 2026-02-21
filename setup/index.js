@@ -308,52 +308,27 @@ async function createAppAndExtractCredentials(config) {
     }
   }
 
-  // Extraire les credentials via la config Web (JSON natif, plus simple que base64 plist)
-  // On cree aussi une app Web pour obtenir les credentials en JSON
+  // Extraire les credentials directement depuis l'app iOS
   try {
-    let webAppId;
-
-    // Creer une app Web temporaire pour obtenir les credentials en JSON
-    try {
-      const webResult = exec(
-        `firebase apps:create WEB ` +
-        `--display-name "${config.orgName} Web Config" ` +
-        `-P ${config.projectId} --json`
-      );
-      const parsed = JSON.parse(webResult);
-      webAppId = parsed.result?.appId;
-    } catch {
-      // App Web existe deja — la recuperer
-      const webList = exec(
-        `firebase apps:list WEB -P ${config.projectId} --json`
-      );
-      const parsed = JSON.parse(webList);
-      webAppId = parsed.result?.[0]?.appId;
-    }
-
-    if (!webAppId) {
-      throw new Error('Impossible de creer/trouver l\'app Web');
-    }
-
-    // Extraire la config SDK Web (retourne du JSON natif)
+    // Recuperer la config SDK de l'app iOS
     const sdkConfigRaw = exec(
-      `firebase apps:sdkconfig WEB ${webAppId} -P ${config.projectId} --json`
+      `firebase apps:sdkconfig IOS ${appId} -P ${config.projectId} --json`
     );
     const sdkConfig = JSON.parse(sdkConfigRaw);
-    const webConfig = sdkConfig.result?.sdkConfig;
+    const iosConfig = sdkConfig.result?.sdkConfig;
 
-    if (!webConfig) {
+    if (!iosConfig) {
       throw new Error('sdkConfig vide');
     }
 
     // Mapper vers le format attendu par FTEPAdmin (FirebaseCredentials)
     const credentials = {
-      apiKey: webConfig.apiKey || '',
-      projectID: webConfig.projectId || '',
-      googleAppID: appId || '', // L'appId iOS, pas le Web
-      gcmSenderID: webConfig.messagingSenderId || '',
-      storageBucket: webConfig.storageBucket || '',
-      databaseURL: webConfig.databaseURL || null
+      apiKey: iosConfig.apiKey || '',
+      projectID: iosConfig.projectId || config.projectId,
+      googleAppID: appId,
+      gcmSenderID: iosConfig.gcmSenderId || '',
+      storageBucket: iosConfig.storageBucket || '',
+      databaseURL: iosConfig.databaseURL || null
     };
 
     // Ecrire le fichier credentials
