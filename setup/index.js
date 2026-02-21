@@ -163,7 +163,7 @@ async function createProject(config) {
   printStep(4, 'Creation du projet Firebase...');
 
   try {
-    exec(
+    execLive(
       `firebase projects:create ${config.projectId} ` +
       `--display-name "${config.orgName}"`
     );
