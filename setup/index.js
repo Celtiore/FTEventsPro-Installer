@@ -389,6 +389,9 @@ async function createAppAndExtractCredentials(config) {
 async function deployRules(config) {
   printStep(8, 'Deploiement des regles de securite...');
 
+  // Firestore et Storage doivent etre initialises manuellement dans la console
+  // avant de pouvoir deployer des rules. On tente le deploy, mais on guide
+  // l'utilisateur si ca echoue.
   try {
     execLive(
       `firebase deploy --only firestore:rules,storage ` +
@@ -396,9 +399,14 @@ async function deployRules(config) {
       `--config "${path.join(ROOT_DIR, 'firebase.json')}"`
     );
     printSuccess('Regles de securite deployees (Firestore + Storage)');
-  } catch (err) {
-    printWarning(`Deploiement des regles en echec : ${err.message}`);
-    printWarning('Les regles pourront etre deployees manuellement plus tard.');
+  } catch {
+    printWarning('Les regles de securite n\'ont pas pu etre deployees automatiquement.');
+    console.log('');
+    console.log('  Cela arrive quand Firestore ou Storage n\'ont pas encore ete');
+    console.log('  initialises dans la console Firebase.');
+    console.log('');
+    console.log('  Pas d\'inquietude : votre administrateur s\'en chargera.');
+    console.log('  Les credentials ont bien ete exportees.');
     // Non bloquant — les credentials sont deja exportees
   }
 }
