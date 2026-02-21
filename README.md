@@ -34,6 +34,8 @@ Telechargez et lancez l'installateur : [Google Cloud SDK Installer](https://dl.g
 
 L'installateur fait tout automatiquement. A la fin, cochez **Run gcloud init** et connectez-vous avec votre compte Google.
 
+> **Important :** Apres l'installation, **fermez et rouvrez votre terminal** (ou Invite de commandes) avant de lancer le script. Sinon gcloud ne sera pas detecte car le PATH n'est pas encore mis a jour.
+
 **Linux (Debian/Ubuntu) :**
 
 ```bash

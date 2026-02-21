@@ -75,7 +75,8 @@ echo.
 echo        Telechargez l'installateur ici :
 echo        https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKInstaller.exe
 echo.
-echo        Lancez l'installateur, puis relancez ce script.
+echo        Lancez l'installateur, puis FERMEZ et ROUVREZ ce terminal
+echo        avant de relancer le script (sinon le PATH n'est pas a jour).
 echo.
 pause
 exit /b 1
