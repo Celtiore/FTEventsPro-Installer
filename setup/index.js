@@ -134,23 +134,26 @@ async function createProject(config) {
   printStep(4, 'Creation du projet Firebase...');
 
   try {
-    execLive(
+    exec(
       `firebase projects:create ${config.projectId} ` +
       `--display-name "${config.orgName}"`
     );
     printSuccess(`Projet ${config.projectId} cree`);
   } catch (err) {
-    if (err.message?.includes('already exists')) {
+    const fullError = `${err.message || ''} ${err.stderr || ''} ${err.stdout || ''}`;
+
+    if (fullError.includes('already exists')) {
       printWarning('Ce projet existe deja. Utilisation du projet existant.');
-    } else if (err.message?.includes('Terms of Service')) {
+    } else if (fullError.includes('Terms of Service')) {
       printError('Vous devez accepter les conditions d\'utilisation de Google Cloud.');
       console.log('');
       console.log('  Ouvrez ce lien dans votre navigateur :');
       console.log('  https://console.cloud.google.com/terms');
       console.log('');
-      console.log('  Acceptez les conditions, puis relancez ce script.');
+      console.log('  Connectez-vous avec votre compte Google, acceptez les conditions,');
+      console.log('  puis relancez ce script.');
       process.exit(1);
-    } else if (err.message?.includes('quota')) {
+    } else if (fullError.includes('quota') || fullError.includes('maximum number')) {
       printError('Vous avez atteint le nombre maximum de projets Firebase.');
       console.log('');
       console.log('  Supprimez un ancien projet dans la console Firebase :');
@@ -159,7 +162,9 @@ async function createProject(config) {
       console.log('  Puis relancez ce script.');
       process.exit(1);
     } else {
-      printError(`Echec de la creation du projet : ${err.message}`);
+      printError('Echec de la creation du projet.');
+      console.log('');
+      console.log('  Detail : ' + (err.stderr || err.message));
       process.exit(1);
     }
   }
